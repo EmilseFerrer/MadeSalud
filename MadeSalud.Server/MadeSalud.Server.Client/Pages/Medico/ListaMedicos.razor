@@ -1,0 +1,133 @@
+﻿@page "/medicos"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "Secretaria")]
+@using MadeSalud.Servicio.ServiciosHttp
+@using MadeSalud.Shared.DTO
+@using MadeSalud.Server.Client.Shared
+
+@inject IHttpServicio http
+@inject NavigationManager navHttp
+
+<div class="card shadow-sm rounded-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Lista de Médicos</h5>
+
+        <a class="btn btn-danger btn-lg rounded-circle d-flex align-items-center justify-content-center"
+               href="/personas/crear"
+               style="width: 45px; height: 45px;">
+            <i class="bi bi-plus-lg"></i>
+        </a>
+    </div>
+
+    <div class="card-body">
+        @if (medicos == null)
+        {
+            <p class="text-muted mb-0">Buscando…</p>
+        }
+        else if (medicos.Count == 0)
+        {
+            <p class="text-muted mb-0">No hay médicos cargados.</p>
+        }
+        else
+        {
+            <ul class="list-group list-group-flush">
+                @foreach (var medico in medicos)
+                {
+                    <li class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="person-avatar">@GetIniciales(medico.DatosMedico)</div>
+                                <div class="fw-semibold text-dark">@medico.DatosMedico</div>
+                            </div>
+
+                            <div class="btn-group">
+                                <button class="btn btn-outline-primary btn-sm rounded-circle"
+                                        title="Editar"
+                                        @onclick="() => Editar(medico.Id)">
+                                    <i class="bi bi-pencil-square"></i>
+                                </button>
+
+                                <button class="btn btn-outline-danger btn-sm rounded-circle"
+                                        title="Borrar"
+                                        @onclick="() => Eliminar(medico)">
+                                    <i class="bi bi-trash3"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+</div>
+
+<br />
+<p>@Mensaje</p>
+
+<Confirmacion @ref="confirmacion"
+              Titulo="Cuidado"
+              textOk="Aceptar"
+              textCancelar="No borrar"
+              onConfirm="Borrar"
+              onCancel="Cancelar">
+    <p>Está por borrar un médico.</p>
+    <p>¿Está seguro?</p>
+</Confirmacion>
+
+@code {
+    List<MedicoListadoDTO>? medicos;
+    string Mensaje = "";
+    Confirmacion confirmacion;
+    MedicoListadoDTO? medicoSeleccionado = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LeerPersonas();
+    }
+
+    private async Task LeerPersonas()
+    {
+        var resp = await http.Get<List<MedicoListadoDTO>>("api/Medico/ListaMedicos");
+
+        if (!resp.Error)
+            medicos = resp.Respuesta;
+        else
+            Mensaje = resp.ObtenerError();
+    }
+
+    private async Task Borrar()
+    {
+        if (medicoSeleccionado is null) return;
+
+        var resp = await http.Delete($"api/Persona/{medicoSeleccionado.Id}");
+
+        if (resp.Error)
+            Mensaje = resp.ObtenerError();
+
+        medicoSeleccionado = null;
+        confirmacion.Ocultar();
+
+        await LeerPersonas();
+    }
+
+    private void Eliminar(MedicoListadoDTO medico)
+    {
+        medicoSeleccionado = medico;
+        confirmacion.Ver();
+    }
+    private void Editar(int id) => navHttp.NavigateTo($"/personas/editar/{id}");
+
+    private void Cancelar()
+    {
+        confirmacion.Ocultar();
+        medicoSeleccionado = null;
+    }
+
+    private string GetIniciales(string texto)
+    {
+        if (string.IsNullOrWhiteSpace(texto)) return "?";
+        var nombre = texto.Split('-')[0];
+        var parts = nombre.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return string.Join("", parts.Take(2).Select(s => char.ToUpperInvariant(s[0])));
+    }
+}

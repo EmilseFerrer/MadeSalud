@@ -1,0 +1,135 @@
+﻿@page "/"
+@using Microsoft.AspNetCore.Components.Authorization
+
+<style>
+    .home-made-page {
+        min-height: calc(100vh - 56px);
+        position: relative;
+        overflow: hidden;
+        background: white;
+        padding: 0.8rem 1.5rem;
+    }
+
+    .home-top-icons {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 3rem;
+        margin-top: 0.2rem;
+        margin-bottom: 1rem;
+        position: relative;
+        z-index: 3;
+    }
+
+        .home-top-icons i {
+            font-size: 2.2rem;
+            color: black;
+        }
+
+    .home-menu-buttons {
+        display: flex;
+        gap: 1.5rem;
+        align-items: center;
+        flex-wrap: wrap;
+        position: relative;
+        z-index: 3;
+        margin-left: 1.5rem;
+    }
+
+    .home-menu-btn {
+        background: #06154a;
+        color: white;
+        border-radius: 2rem;
+        padding: 0.35rem 1rem;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+
+        .home-menu-btn:hover {
+            color: white;
+            background: #0d2370;
+        }
+
+    .home-logo-right {
+        position: absolute;
+        top: 0.8rem;
+        right: 1.2rem;
+        width: 165px;
+        height: auto;
+        object-fit: contain;
+        z-index: 3;
+    }
+
+    .home-wave {
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        height: 48%;
+        z-index: 1;
+    }
+
+    .login-center {
+        min-height: calc(100vh - 56px);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .login-box {
+        text-align: center;
+    }
+</style>
+
+<AuthorizeView>
+    <Authorized>
+        <div class="home-made-page">
+
+           
+
+            <div class="home-menu-buttons">
+                <a class="home-menu-btn" href="/turnos">
+                    Agendas →
+                </a>
+
+                <a class="home-menu-btn" href="/personas">
+                    Pacientes →
+                </a>
+
+                <a class="home-menu-btn" href="/medicos">
+                    Medicos →
+                </a>
+
+                <a class="home-menu-btn" href="/farmacia">
+                    Farmacia →
+                </a>
+            </div>
+
+            <img src="Img/Made Salud.jpg" alt="Made Salud" class="home-logo-right" />
+
+            <svg class="home-wave" viewBox="0 0 1200 420" preserveAspectRatio="none">
+                <path d="M0,270 C250,330 420,240 650,150 C850,75 1000,20 1200,55 L1200,420 L0,420 Z"
+                      fill="#b7cef7" />
+                <path d="M0,300 C250,360 420,285 680,180 C890,95 1020,60 1200,95 L1200,420 L0,420 Z"
+                      fill="#ffffff" />
+                <path d="M0,325 C260,390 470,315 720,220 C920,145 1040,105 1200,130 L1200,420 L0,420 Z"
+                      fill="#b7cef7" />
+            </svg>
+
+        </div>
+    </Authorized>
+
+    <NotAuthorized>
+        <div class="login-center">
+            <div class="login-box">
+                <h2>Acceso restringido</h2>
+                <p>Debes iniciar sesión para acceder al sistema.</p>
+
+                <a href="/Account/Login" class="btn btn-primary">
+                    Iniciar sesión
+                </a>
+            </div>
+        </div>
+    </NotAuthorized>
+</AuthorizeView>

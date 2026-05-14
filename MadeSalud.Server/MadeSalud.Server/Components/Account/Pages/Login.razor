@@ -1,0 +1,256 @@
+﻿@page "/Account/Login"
+
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Identity
+@using MadeSalud.BD.Datos
+
+@inject UserManager<MiUsuario> UserManager
+@inject SignInManager<MiUsuario> SignInManager
+@inject ILogger<Login> Logger
+@inject NavigationManager NavigationManager
+@inject IdentityRedirectManager RedirectManager
+
+<PageTitle>Log in</PageTitle>
+
+<style>
+    .login-made-page {
+        min-height: calc(100vh - 56px);
+        position: relative;
+        overflow: hidden;
+        background: white;
+        padding: 1rem 2rem;
+    }
+
+    .login-made-header {
+        display: flex;
+        justify-content: flex-start;
+        align-items: flex-start;
+        padding-right: 180px;
+        margin-bottom: 1rem;
+        position: relative;
+    }
+
+    .login-made-header h1 {
+        font-size: 1.6rem;
+        font-weight: 600;
+        margin-bottom: 0.2rem;
+    }
+
+    .login-made-header p {
+        font-size: 0.8rem;
+        margin: 0;
+    }
+
+    .login-made-logo {
+        width: 250px;
+        height: auto;
+        object-fit: contain;
+        position: absolute;
+        top: 0.5rem;
+        right: 1rem;
+    }
+
+    .login-made-form {
+        width: 250px;
+        margin: 2rem auto 0 auto;
+        position: relative;
+        top: -30px;
+        z-index: 2;
+    }
+
+    .login-made-group {
+        margin-bottom: 1rem;
+    }
+
+    .login-made-group label {
+        display: block;
+        font-size: 0.75rem;
+        font-weight: bold;
+        margin-bottom: 0.25rem;
+    }
+
+    .login-made-input {
+        width: 100%;
+        height: 42px;
+        border: 1px solid #777;
+        border-radius: 0.5rem;
+        padding: 0.5rem;
+        box-shadow: 0 3px 0 rgba(0,0,0,0.35);
+    }
+
+    .login-made-remember {
+        font-size: 0.85rem;
+        margin-bottom: 0.7rem;
+    }
+
+    .login-made-btn {
+        background-color: #07164b;
+        color: white;
+        border: none;
+        border-radius: 2rem;
+        padding: 0.45rem 1.5rem;
+        font-weight: 600;
+        display: block;
+        margin: 0 auto;
+    }
+
+    .login-made-btn:hover {
+        background-color: #0d2370;
+    }
+
+    .login-made-wave {
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        height: 38%;
+        z-index: 1;
+    }
+
+    .login-made-error {
+        position: relative;
+        z-index: 3;
+    }
+</style>
+
+<div class="login-made-page">
+
+    <div class="login-made-header">
+        <div>
+            <h1>Made Salud</h1>
+            <p>
+                Medicina Alternativa de Excelencia<br />
+                Bienvenido al sistema de gestión de turnos médicos.
+            </p>
+        </div>
+
+        <img src="/Img/Made Salud.jpg" alt="Made Salud" class="login-made-logo" />
+    </div>
+
+    <div class="login-made-form">
+
+        <div class="login-made-error">
+            <StatusMessage Message="@errorMessage" />
+        </div>
+
+        <EditForm EditContext="editContext" method="post" OnSubmit="LoginUser" FormName="login">
+            <DataAnnotationsValidator />
+            <ValidationSummary class="text-danger" role="alert" />
+
+            <div class="login-made-group">
+                <label>Usuario</label>
+                <InputText @bind-Value="Input.Email"
+                           class="login-made-input"
+                           autocomplete="username" />
+                <ValidationMessage For="() => Input.Email" class="text-danger" />
+            </div>
+
+            <div class="login-made-group">
+                <label>Contraseña</label>
+                <InputText type="password"
+                           @bind-Value="Input.Password"
+                           class="login-made-input"
+                           autocomplete="current-password" />
+                <ValidationMessage For="() => Input.Password" class="text-danger" />
+            </div>
+
+            <div class="login-made-remember">
+                <label>
+                    <InputCheckbox @bind-Value="Input.RememberMe" />
+                    Recordarme
+                </label>
+            </div>
+
+            <button type="submit" class="login-made-btn">
+                Ingresar →
+            </button>
+        </EditForm>
+    </div>
+
+    <svg class="login-made-wave" viewBox="0 0 1200 420" preserveAspectRatio="none">
+        <path d="M0,270 C250,330 420,240 650,150 C850,75 1000,20 1200,55 L1200,420 L0,420 Z"
+              fill="#b7cef7" />
+        <path d="M0,300 C250,360 420,285 680,180 C890,95 1020,60 1200,95 L1200,420 L0,420 Z"
+              fill="#ffffff" />
+        <path d="M0,325 C260,390 470,315 720,220 C920,145 1040,105 1200,130 L1200,420 L0,420 Z"
+              fill="#b7cef7" />
+    </svg>
+
+</div>
+
+@code {
+    private string? errorMessage;
+    private EditContext editContext = default!;
+
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    [SupplyParameterFromForm]
+    private InputModel Input { get; set; } = default!;
+
+    [SupplyParameterFromQuery]
+    private string? ReturnUrl { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Input ??= new();
+        editContext = new EditContext(Input);
+
+        if (HttpMethods.IsGet(HttpContext.Request.Method))
+        {
+            await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+        }
+    }
+
+    public async Task LoginUser()
+    {
+        if (!editContext.Validate())
+        {
+            return;
+        }
+
+        var result = await SignInManager.PasswordSignInAsync(
+            Input.Email,
+            Input.Password,
+            Input.RememberMe,
+            lockoutOnFailure: false);
+
+        if (result.Succeeded)
+        {
+            Logger.LogInformation("User logged in.");
+            RedirectManager.RedirectTo(ReturnUrl);
+        }
+        else if (result.RequiresTwoFactor)
+        {
+            RedirectManager.RedirectTo(
+                "Account/LoginWith2fa",
+                new() { ["returnUrl"] = ReturnUrl, ["rememberMe"] = Input.RememberMe });
+        }
+        else if (result.IsLockedOut)
+        {
+            Logger.LogWarning("User account locked out.");
+            RedirectManager.RedirectTo("Account/Lockout");
+        }
+        else
+        {
+            errorMessage = "Error: Invalid login attempt.";
+        }
+    }
+
+    private sealed class InputModel
+    {
+        [Required]
+        [EmailAddress]
+        public string Email { get; set; } = "";
+
+        [Required]
+        [DataType(DataType.Password)]
+        public string Password { get; set; } = "";
+
+        [Display(Name = "Remember me?")]
+        public bool RememberMe { get; set; }
+
+        public PasskeyInputModel? Passkey { get; set; }
+    }
+}

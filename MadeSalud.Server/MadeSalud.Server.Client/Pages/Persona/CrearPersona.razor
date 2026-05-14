@@ -1,0 +1,156 @@
+﻿@page "/personas/crear"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "Secretaria")]
+@using MadeSalud.Servicio.ServiciosHttp
+@using MadeSalud.Shared.DTO
+@using MadeSalud.Shared.ENUM
+@inject IHttpServicio http
+@inject NavigationManager navHttp
+
+<h3>Agregar Persona</h3>
+
+<EditForm Model="persona" OnValidSubmit="Grabar">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <div class="card p-4 shadow-sm rounded-4" style="max-width: 600px;">
+        <div class="mb-3">
+            <label>Nombre</label>
+            <div>
+                <InputText class="form-control" @bind-Value="@persona.Nombre" />
+                <ValidationMessage For="@(() => persona.Nombre)" />
+            </div>
+        </div>
+        <br />
+        <div class="form-group">
+            <label>Apellido</label>
+            <div>
+                <InputText class="form-control" @bind-Value="@persona.Apellido" />
+                <ValidationMessage For="@(() => persona.Apellido)" />
+            </div>
+        </div>
+        <br />
+        <div class="form-group">
+            <label>DNI</label>
+            <div>
+                <InputText class="form-control" @bind-Value="@persona.DNI" />
+                <ValidationMessage For="@(() => persona.DNI)" />
+            </div>
+        </div>
+        <br />
+        <div class="form-group">
+            <label>Telefono</label>
+            <div>
+                <InputText class="form-control" @bind-Value="@persona.Telefono" />
+                <ValidationMessage For="@(() =>persona.Telefono)" />
+            </div>
+        </div>
+        <br />
+        <div class="form-group">
+            <label>Direccion</label>
+            <div>
+                <InputText class="form-control" @bind-Value="@persona.Direccion" />
+                <ValidationMessage For="@(() => persona.Direccion)" />
+            </div>
+        </div>
+        <br />
+        <div class="form-group">
+            <label>Sexo</label>
+            <InputSelect @bind-Value="persona.Sexo" class="form-control">
+                <option value="">Seleccione una opción</option>
+                <option value="F">Femenino</option>
+                <option value="M">Masculino</option>
+                <option value="O">Otro</option>
+            </InputSelect>
+        </div>
+        <br />
+        <div class="mb-3">
+            <label class="form-label">Rol</label>
+            <InputSelect class="form-control" @bind-Value="persona.Rol">
+                <option value="">Seleccione un rol</option>
+                <option value="1">Paciente</option>
+                <option value="2">Médico</option>
+                <option value="3">Secretaria</option>
+            </InputSelect>
+            <ValidationMessage For="@(() => persona.Rol)" />
+        </div>
+        @if (persona.Rol == RolEnum.Paciente)
+        {
+            <div class="alert alert-info">
+                El número de Historia Clínica se generará automáticamente.
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Obra Social</label>
+                <InputText class="form-control"
+                           @bind-Value="persona.ObraSocial" />
+                <ValidationMessage For="@(() => persona.ObraSocial)" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Motivo de consulta</label>
+                <InputTextArea class="form-control"
+                               @bind-Value="persona.MotivoConsulta" />
+                <ValidationMessage For="@(() => persona.MotivoConsulta)" />
+            </div>
+        }
+
+        @if (persona.Rol == RolEnum.Medico)
+        {
+            <div class="mb-3">
+                <label class="form-label">Matrícula Profesional</label>
+                <InputText class="form-control"
+                           @bind-Value="persona.MatriculaProfesional" />
+                <ValidationMessage For="@(() => persona.MatriculaProfesional)" />
+            </div>
+        }
+
+        @if (persona.Rol == RolEnum.Secretaria)
+        {
+            <div class="alert alert-info">
+                El número de legajo se generará automáticamente.
+            </div>
+        }
+        <br />
+
+        <button class="btn btn-primary" type="submit">Aceptar</button>
+        <br />
+        <button type="button" class="btn btn-secondary" @onclick="Cancelar">Cancelar</button>
+    </div>
+</EditForm>
+@if (!string.IsNullOrWhiteSpace(Mensaje))
+{
+    <div class="alert alert-danger mt-3">
+        @Mensaje
+    </div>
+}
+
+@if (!string.IsNullOrWhiteSpace(Mensaje))
+{
+    <div class="alert alert-danger mt-3">
+        @Mensaje
+    </div>
+}
+@code 
+{
+    private PersonaCrearDTO persona = new PersonaCrearDTO();
+    string Mensaje = "";
+
+    private async Task Grabar()
+    {
+        var httpResp = await http.Post<PersonaCrearDTO, int>("api/Persona", persona);
+
+        if (!httpResp.Error)
+        {
+            navHttp.NavigateTo("/personas");
+        }
+        else
+        {
+            Mensaje = httpResp.ObtenerError();
+        }
+    }
+
+    private void  Cancelar()
+    {
+        navHttp.NavigateTo("/personas");
+    }
+}

@@ -1,0 +1,125 @@
+﻿@inherits LayoutComponentBase
+
+<div class="page">
+    <div class="sidebar">
+        <NavMenu />
+    </div>
+
+    <main>
+        <div class="top-row px-4 made-topbar">
+
+            <div class="made-top-icons">
+
+                <NavLink href="/turnos" class="top-icon-link" title="Turnos">
+                    <i class="bi bi-calendar2-week"></i>
+                </NavLink>
+
+                <NavLink href="/pacientes" class="top-icon-link" title="Pacientes">
+                    <i class="bi bi-people-fill"></i>
+                </NavLink>
+
+                <NavLink href="/medicos" class="top-icon-link" title="Médicos">
+                    <i class="bi bi-person-badge-fill"></i>
+                </NavLink>
+
+                <NavLink href="/secretarias" class="top-icon-link" title="Secretarias">
+                    <i class="bi bi-person-lines-fill"></i>
+                </NavLink>
+
+                <NavLink href="/farmacia" class="top-icon-link" title="Farmacia">
+                    <i class="bi bi-capsule-pill"></i>
+                </NavLink>
+
+                <NavLink href="/configuracion" class="top-icon-link" title="Configuración">
+                    <i class="bi bi-gear-fill"></i>
+                </NavLink>
+
+            </div>
+
+            <div class="made-top-buttons">
+                <AuthorizeView>
+                    <NotAuthorized>
+                        <a class="btn btn-sm btn-primary" href="/Account/Register">
+                            Register
+                        </a>
+
+                        <a class="btn btn-sm btn-primary" href="/Account/Login">
+                            Login
+                        </a>
+                    </NotAuthorized>
+
+                    <Authorized>
+                        <a class="btn btn-sm btn-outline-primary" href="/Account/Manage">
+                            Mi Perfil
+                        </a>
+
+                        <form action="/Account/Logout" method="post">
+                            <AntiforgeryToken />
+                            <button type="submit" class="btn btn-sm btn-primary">
+                                Salir
+                            </button>
+                        </form>
+                    </Authorized>
+                </AuthorizeView>
+            </div>
+
+        </div>
+
+        <article class="content px-4">
+            @Body
+        </article>
+    </main>
+</div>
+
+<div id="blazor-error-ui" data-nosnippet>
+    An unhandled error has occurred.
+    <a href="." class="reload">Reload</a>
+    <span class="dismiss">🗙</span>
+</div>
+
+<style>
+    .made-topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background-color: #1f4f86;
+        min-height: 56px;
+    }
+
+    .made-top-icons {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 2.2rem;
+        flex: 1;
+    }
+
+    .top-icon-link {
+        color: black;
+        text-decoration: none;
+        transition: transform 0.2s ease, color 0.2s ease;
+    }
+
+        .top-icon-link i {
+            font-size: 1.9rem;
+        }
+
+        .top-icon-link:hover {
+            color: white;
+            transform: scale(1.15);
+        }
+
+        .top-icon-link.active {
+            color: white;
+        }
+
+    .made-top-buttons {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+    }
+
+        .made-top-buttons form {
+            margin: 0;
+        }
+</style>

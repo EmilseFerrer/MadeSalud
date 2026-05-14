@@ -1,0 +1,136 @@
+﻿
+@page "/personas"
+@using Microsoft.AspNetCore.Authorization
+@* @attribute [Authorize(Roles = "Secretaria")] *@
+@using MadeSalud.Servicio.ServiciosHttp
+@using MadeSalud.Shared.DTO
+@using MadeSalud.Server.Client.Shared
+@using Microsoft.AspNetCore.Components.Authorization
+
+@inject IHttpServicio http
+@inject NavigationManager navHttp
+
+<div class="card shadow-sm rounded-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Lista de Personas</h5>
+        <AuthorizeView Roles="Secretaria">
+            <Authorized>
+                <a class="btn btn-danger btn-lg rounded-circle d-flex align-items-center justify-content-center"
+                       href="/personas/crear"
+                       style="width: 45px; height: 45px;">
+                    <i class="bi bi-plus-lg"></i>
+                </a>
+            </Authorized>
+        </AuthorizeView>
+    </div>
+
+    <div class="card-body">
+        @if (personas == null)
+        {
+            <p class="text-muted mb-0">Buscando…</p>
+        }
+        else if (personas.Count == 0)
+        {
+            <p class="text-muted mb-0">No hay personas cargadas en esta lista.</p>
+        }
+        else
+        {
+            <ul class="list-group list-group-flush person-list">
+                @foreach (var persona in personas)
+                {
+                    <li class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="person-avatar">@GetIniciales(persona.DatosPersona)</div>
+                                <div class="fw-semibold text-dark">@persona.DatosPersona</div>
+                            </div>
+
+                            <AuthorizeView>
+                                <Authorized>
+                                    <div class="btn-group">
+                                        <button class="btn btn-outline-primary btn-sm rounded-circle"
+                                                title="Editar"
+                                                @onclick="() => Editar(persona.Id)">
+                                            <i class="bi bi-pencil-square"></i>
+                                        </button>
+
+                                        <button class="btn btn-outline-danger btn-sm rounded-circle"
+                                                title="Borrar"
+                                                @onclick="() => Eliminar(persona)">
+                                            <i class="bi bi-trash3"></i>
+                                        </button>
+                                    </div>
+                                </Authorized>
+                            </AuthorizeView>
+                        </div>
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+</div>
+
+<br />
+<p>@Mensaje</p>
+
+<Confirmacion @ref="confirmacion"
+              Titulo="Cuidado"
+              textOk="Aceptar"
+              textCancelar="No borrar"
+              onConfirm="Borrar"
+              onCancel="Cancelar">
+    <p>Está por borrar una persona.</p>
+    <p>¿Está seguro?</p>
+</Confirmacion>
+
+@code {
+    List<PersonaListadoDTO>? personas;
+    string Mensaje = "";
+    Confirmacion confirmacion;
+    PersonaListadoDTO personaSeleccionada = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        await LeerPersonas();
+    }
+
+    private async Task LeerPersonas()
+    {
+        var resp = await http.Get<List<PersonaListadoDTO>>("api/Persona/ListaPersona");
+        if (!resp.Error) personas = resp.Respuesta;
+        else Mensaje = resp.ObtenerError();
+    }
+
+    private async Task Borrar()
+    {
+        var resp = await http.Delete($"api/Persona/{personaSeleccionada.Id}");
+        if (resp.Error) Mensaje = resp.ObtenerError();
+        personaSeleccionada = null;
+        confirmacion.Ocultar();
+        await LeerPersonas();
+    }
+
+    private async Task Eliminar(PersonaListadoDTO persona)
+    {
+        personaSeleccionada = persona;
+        confirmacion.Ver();
+    }
+
+    private void Editar(int id) => navHttp.NavigateTo($"/personas/editar/{id}");
+
+    private void Cancelar()
+    {
+        confirmacion.Ocultar();
+        personaSeleccionada = null;
+    }
+
+    private string GetIniciales(string texto)
+    {
+        if (string.IsNullOrWhiteSpace(texto)) return "?";
+        var nombre = texto.Split('-')[0]; // toma lo anterior al “-” de DatosPersona
+        var parts = nombre.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return string.Join("", parts.Take(2).Select(s => char.ToUpperInvariant(s[0])));
+    }
+}
+

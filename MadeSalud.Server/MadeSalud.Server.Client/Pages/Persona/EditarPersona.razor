@@ -1,0 +1,136 @@
+﻿@page "/personas/editar/{Id:int}"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "Secretaria")]
+@using MadeSalud.Servicio.ServiciosHttp
+@using MadeSalud.Shared.DTO
+@using MadeSalud.Shared.ENUM
+
+@inject IHttpServicio Http
+@inject NavigationManager Nav
+
+<h3>Editar Persona</h3>
+
+@if (persona == null)
+{
+    <p>Cargando...</p>
+}
+else
+{
+    <EditForm Model="persona" OnValidSubmit="GuardarCambios">
+        <DataAnnotationsValidator />
+
+        <div class="card p-4 shadow-sm rounded-4" style="max-width: 600px;">
+            <div class="mb-3">
+                <label>Nombre</label>
+                <div>
+                    <InputText class="form-control" @bind-Value="@persona.Nombre" />
+                    <ValidationMessage For="@(() => persona.Nombre)" />
+                </div>
+            </div>
+            <br />
+            <div class="form-group">
+                <label>Apellido</label>
+                <div>
+                    <InputText class="form-control" @bind-Value="@persona.Apellido" />
+                    <ValidationMessage For="@(() => persona.Apellido)" />
+                </div>
+            </div>
+            <br />
+            <div class="form-group">
+                <label>DNI</label>
+                <div>
+                    <InputText class="form-control" @bind-Value="@persona.DNI" />
+                    <ValidationMessage For="@(() => persona.DNI)" />
+                </div>
+            </div>
+            <br />
+            <div class="form-group">
+                <label>Telefono</label>
+                <div>
+                    <InputText class="form-control" @bind-Value="@persona.Telefono" />
+                    <ValidationMessage For="@(() => persona.Telefono)" />
+                </div>
+            </div>
+            <br />
+            <div class="form-group">
+                <label>Direccion</label>
+                <div>
+                    <InputText class="form-control" @bind-Value="@persona.Direccion" />
+                    <ValidationMessage For="@(() => persona.Direccion)" />
+                </div>
+            </div>
+            <br />
+            <div class="form-group">
+                <label>Sexo</label>
+                <InputSelect @bind-Value="persona.Sexo" class="form-control">
+                    <option value="">Seleccione una opción</option>
+                    <option value="F">Femenino</option>
+                    <option value="M">Masculino</option>
+                    <option value="O">Otro</option>
+                </InputSelect>
+            </div>
+            <br />
+            <div class="form-group">
+                <label>Rol:</label>
+                <InputSelect @bind-Value="persona.Rol" class="form-control">
+                    <option value="">Seleccione un rol</option>
+                    <option value="@RolEnum.Paciente">Paciente</option>
+                    <option value="@RolEnum.Medico">Medico</option>
+                    <option value="@RolEnum.Secretaria">Secretaria</option>
+                </InputSelect>
+            </div>
+            <br />
+
+            <button class="btn btn-primary" type="submit">Guardar</button>
+            <br />
+            <button class="btn btn-secondary" @onclick="Volver">Cancelar</button>
+        </div>
+    </EditForm>
+}
+
+<p>@Mensaje</p>
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private PersonaCrearDTO? persona;
+    private string Mensaje = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var resp = await Http.Get<PersonaCrearDTO>($"api/persona/id/{Id}");
+        if (!resp.Error)
+        {
+            persona = resp.Respuesta;
+        }
+        else
+        {
+            Mensaje = resp.ObtenerError();
+        }
+    }
+
+    private async Task GuardarCambios()
+    {
+        try
+        {
+            var resp = await Http.Put<PersonaCrearDTO, int>($"api/persona/{Id}", persona!);
+            if (!resp.Error)
+            {
+                Nav.NavigateTo("/personas");
+            }
+            else
+            {
+                Mensaje = resp.ObtenerError();
+            }
+        }
+        catch (Exception ex)
+        {
+            Mensaje = $"Error al guardar cambios: {ex.Message}";
+            return;
+        }
+    }
+
+    private void Volver()
+    {
+        Nav.NavigateTo("/personas");
+    }
+}

@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="MadeSalud.BD/MadeSalud.BD.csproj" />
+  <Project Path="MadeSalud.Repositorio/MadeSalud.Repositorio.csproj" />
+  <Project Path="MadeSalud.Server/MadeSalud.Server.Client/MadeSalud.Server.Client.csproj" />
+  <Project Path="MadeSalud.Server/MadeSalud.Server/MadeSalud.Server.csproj" />
+  <Project Path="MadeSalud.Servicios/MadeSalud.Servicios.csproj" />
+  <Project Path="MadeSalud.Shared/MadeSalud.Shared.csproj" />
+</Solution>
