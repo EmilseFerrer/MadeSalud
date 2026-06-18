@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.OutputCaching;
 
 
 
+
 namespace MadeSalud.Server.Controllers
 {
     [Authorize(Roles = "Secretaria,Medico")]
@@ -16,15 +17,19 @@ namespace MadeSalud.Server.Controllers
     public class MedicamentoController : ControllerBase
     {
         private readonly IMedicamentoRepositorio repositorio;
+        private readonly IOutputCacheStore cache;
 
-        public MedicamentoController(IMedicamentoRepositorio repositorio)
+        public MedicamentoController(
+                            IMedicamentoRepositorio repositorio,
+                            IOutputCacheStore cache)
         {
             this.repositorio = repositorio;
+            this.cache = cache;
         }
 
         [AllowAnonymous]
         [HttpGet("Lista")]
-        [OutputCache(Duration = 60)]
+        [OutputCache(Duration = 60, Tags = new[] { "medicamentos" })]
         public async Task<ActionResult<List<MedicamentoListadoDTO>>> GetLista()
         {
             var lista = await repositorio.SelectLista();
@@ -52,7 +57,9 @@ namespace MadeSalud.Server.Controllers
                 };
 
                 var id = await repositorio.Insert(medicamento);
-
+                await cache.EvictByTagAsync(
+                                            "medicamentos",
+                                            HttpContext.RequestAborted);
                 return Ok(id);
             }
             catch (Exception e)
@@ -77,9 +84,12 @@ namespace MadeSalud.Server.Controllers
             medicamento.PrecioAmaCasa30 = dto.PrecioUnitario * 0.70m;
 
             var resultado = await repositorio.Update(id, medicamento);
-
+            
             if (!resultado)
                 return BadRequest("No se pudo modificar el medicamento.");
+            await cache.EvictByTagAsync(
+                                 "medicamentos",
+                                    HttpContext.RequestAborted);
 
             return Ok("Medicamento modificado correctamente.");
         }
@@ -92,7 +102,9 @@ namespace MadeSalud.Server.Controllers
 
             if (!resultado)
                 return NotFound("No se encontró el medicamento.");
-
+            await cache.EvictByTagAsync(
+                                    "medicamentos",
+                                    HttpContext.RequestAborted);
             return Ok("Medicamento eliminado correctamente.");
         }
     }
