@@ -15,6 +15,11 @@ using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddOutputCache(options =>
+{
+   options.DefaultExpirationTimeSpan = TimeSpan.FromSeconds(60);
+});
+
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
@@ -56,6 +61,7 @@ builder.Services.AddScoped<IPacienteRepositorio, PacienteRepositorio>();
 builder.Services.AddScoped<IPersonaRepositorio, PersonaRepositorio>();
 builder.Services.AddScoped<IMedicoRepositorio, MedicoRepositorio>();
 builder.Services.AddScoped<ISecretariaRepositorio, SecretariaRepositorio>();
+builder.Services.AddScoped<IMedicamentoRepositorio, MedicamentoRepositorio>();
 
 builder.Services.AddScoped(sp =>
 {
@@ -115,6 +121,8 @@ app.UseAntiforgery();
 
 app.MapStaticAssets();
 
+app.UseOutputCache();
+
 app.MapControllers();
 
 app.MapRazorComponents<App>()
@@ -143,6 +151,9 @@ using (var scope = app.Services.CreateScope())
 
     if (usuario != null)
     {
+        usuario.EmailConfirmed = true;
+        await userManager.UpdateAsync(usuario);
+
         if (!await userManager.IsInRoleAsync(usuario, "Secretaria"))
         {
             await userManager.AddToRoleAsync(usuario, "Secretaria");

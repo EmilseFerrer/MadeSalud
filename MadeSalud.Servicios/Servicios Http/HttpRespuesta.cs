@@ -39,7 +39,7 @@ namespace MadeSalud.Servicio.ServiciosHttp
                     case HttpStatusCode.Forbidden:
                         return "No tiene autorización a ejecutar este proceso";
                     case HttpStatusCode.BadRequest:
-                        return "No se pudo preocesar la información";
+                        return "No se pudo procesar la información";
                     default:
                         return $"Error en la llamada HTTP. Código de Estado: {statuscode}";
                 }

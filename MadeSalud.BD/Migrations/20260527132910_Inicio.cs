@@ -323,7 +323,7 @@ namespace MadeSalud.BD.Migrations
                         column: x => x.MedicoId,
                         principalTable: "Medicos",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.NoAction);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Turnos_Pacientes_PacienteId",
                         column: x => x.PacienteId,
@@ -397,8 +397,7 @@ namespace MadeSalud.BD.Migrations
                         name: "FK_ConsultasMedicas_Turnos_TurnoId",
                         column: x => x.TurnoId,
                         principalTable: "Turnos",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -427,7 +426,7 @@ namespace MadeSalud.BD.Migrations
                         column: x => x.PedidoLaboratorioId,
                         principalTable: "PedidosLaboratorio",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.NoAction);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(

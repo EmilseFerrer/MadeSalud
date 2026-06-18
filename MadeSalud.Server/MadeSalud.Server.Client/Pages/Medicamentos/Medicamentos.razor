@@ -1,0 +1,302 @@
+﻿@page "/medicamentos"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "Secretaria,Medico")]
+@using MadeSalud.Servicio.ServiciosHttp
+@using MadeSalud.Shared.DTO
+@using MadeSalud.Server.Client.Shared
+
+@inject IHttpServicio http
+
+<div class="card shadow-sm rounded-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Lista de Medicamentos</h5>
+    </div>
+
+    <div class="card-body">
+
+        <AuthorizeView Roles="Secretaria" Context="authContext">
+
+            <div class="card p-3 mb-3 shadow-sm">
+
+                <EditForm Model="nuevoMedicamento" OnValidSubmit="Guardar">
+
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+
+                    <div class="row g-3 mb-3">
+
+                        <div class="col-md-3">
+                            <label class="form-label">Código</label>
+
+                            <InputText class="form-control"
+                                       @bind-Value="nuevoMedicamento.Codigo" />
+                        </div>
+
+                        
+
+                        <div class="col-md-2">
+                            <label>Presentación</label>
+                            <InputText class="form-control"
+                                       @bind-Value="nuevoMedicamento.Presentacion" />
+                        </div>
+
+                        <div class="col-md-2">
+                            <label>Precio Unitario</label>
+                            <InputNumber class="form-control"
+                                         @bind-Value="nuevoMedicamento.PrecioUnitario"
+                                         min="1" />
+                        </div>
+
+                        
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button class="btn btn-primary w-100" type="submit">
+                                @(editando ? "Guardar cambios" : "Agregar")
+                            </button>
+
+                            @if (editando)
+                            {
+                                <button type="button"
+                                        class="btn btn-secondary w-100 mt-2"
+                                        @onclick="CancelarEdicion">
+                                    Cancelar edición
+                                </button>
+                            }
+                        </div>
+
+                    </div>
+
+                </EditForm>
+
+            </div>
+
+        </AuthorizeView>
+
+        @if (!string.IsNullOrWhiteSpace(Mensaje))
+        {
+            <div class="alert alert-danger">
+                @Mensaje
+            </div>
+        }
+
+        @if (medicamentos == null)
+        {
+            <p class="text-muted">Buscando medicamentos...</p>
+        }
+        else if (medicamentos.Count == 0)
+        {
+            <p class="text-muted">No hay medicamentos cargados.</p>
+        }
+        else
+        {
+
+            <div class="mb-3">
+                <label>Buscar por código</label>
+                <input class="form-control"
+                       value="@codigoBusqueda"
+                       @oninput="BuscarPorCodigo"
+                       placeholder="Ej: 3R, 3/1, 12..." />
+            </div>
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Presentación</th>
+                        <th>Precio</th>
+                        <th>15%</th>
+                        <th>25%</th>
+                        <th>Ama Casa</th>
+                        
+                        <th></th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @foreach (var med in MedicamentosFiltrados)
+                    {
+                        <tr>
+                            <td>@(med.Codigo ?? "")</td>
+                            <td>@(med.Presentacion ?? "")</td>
+                            <td>@($"$ {med.PrecioUnitario:N0}")</td>
+                            <td>@($"$ {med.Precio15:N0}")</td>
+                            <td>@($"$ {med.Precio25:N0}")</td>
+                            <td>@($"$ {med.PrecioAmaCasa30:N0}")</td>
+                            
+
+                            <td>
+                                <div class="btn-group">
+                                    <button class="btn btn-outline-primary btn-sm"
+                                            title="Editar"
+                                            @onclick="() => Editar(med)">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </button>
+
+                                    <button class="btn btn-outline-danger btn-sm"
+                                            title="Borrar"
+                                            @onclick="() => Eliminar(med)">
+                                        <i class="bi bi-trash3"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+<Confirmacion @ref="confirmacion"
+              Titulo="Eliminar medicamento"
+              textOk="Eliminar"
+              textCancelar="Cancelar"
+              onConfirm="ConfirmarBorrado"
+              onCancel="CancelarBorrado">
+    <p>¿Desea eliminar este medicamento?</p>
+</Confirmacion>
+
+@code {
+    private List<MedicamentoListadoDTO>? medicamentos;
+    private MedicamentoCrearDTO nuevoMedicamento = new();
+    private string Mensaje = "";
+
+    private bool editando = false;
+    private int medicamentoIdEditando = 0;
+
+    private Confirmacion confirmacion;
+    private MedicamentoListadoDTO? medicamentoSeleccionado;
+    private string codigoBusqueda = "";
+   
+    
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LeerMedicamentos();
+    }
+
+    private async Task LeerMedicamentos()
+    {
+        var resp = await http.Get<List<MedicamentoListadoDTO>>("api/Medicamento/Lista");
+
+        if (!resp.Error)
+        {
+            medicamentos = resp.Respuesta;
+        }
+        else
+        {
+            Mensaje = resp.ObtenerError();
+        }
+    }
+
+    private async Task Guardar()
+    {
+        Mensaje = "";
+
+        if (!editando)
+        {
+            var resp = await http.Post<MedicamentoCrearDTO, int>("api/Medicamento", nuevoMedicamento);
+
+            if (!resp.Error)
+            {
+                nuevoMedicamento = new();
+                await LeerMedicamentos();
+            }
+            else
+            {
+                Mensaje = resp.ObtenerError();
+            }
+        }
+        else
+        {
+            var resp = await http.Put<MedicamentoCrearDTO, string>(
+                        $"api/Medicamento/{medicamentoIdEditando}",
+                                               nuevoMedicamento
+                                                                  );
+
+            if (!resp.Error)
+            {
+                editando = false;
+                medicamentoIdEditando = 0;
+                nuevoMedicamento = new();
+                await LeerMedicamentos();
+            }
+            else
+            {
+                Mensaje = resp.ObtenerError();
+            }
+        }
+    }
+
+    private void Editar(MedicamentoListadoDTO med)
+    {
+        Mensaje = "";
+        editando = true;
+        medicamentoIdEditando = med.Id;
+
+        nuevoMedicamento = new MedicamentoCrearDTO
+        {
+            Codigo = med.Codigo,
+            Presentacion = med.Presentacion,
+            PrecioUnitario = med.PrecioUnitario
+        };
+    }
+
+    private void CancelarEdicion()
+    {
+        editando = false;
+        medicamentoIdEditando = 0;
+        nuevoMedicamento = new();
+        Mensaje = "";
+    }
+
+    private void Eliminar(MedicamentoListadoDTO med)
+    {
+        medicamentoSeleccionado = med;
+        confirmacion.Ver();
+    }
+
+    private async Task ConfirmarBorrado()
+    {
+        if (medicamentoSeleccionado == null)
+            return;
+
+        var resp = await http.Delete($"api/Medicamento/{medicamentoSeleccionado.Id}");
+
+        if (!resp.Error)
+        {
+            medicamentoSeleccionado = null;
+            confirmacion.Ocultar();
+            await LeerMedicamentos();
+        }
+        else
+        {
+            Mensaje = resp.ObtenerError();
+            confirmacion.Ocultar();
+        }
+    }
+
+    private void CancelarBorrado()
+    {
+        medicamentoSeleccionado = null;
+        confirmacion.Ocultar();
+    }
+
+    private void BuscarPorCodigo(ChangeEventArgs e)
+    {
+        codigoBusqueda = e.Value?.ToString() ?? "";
+    }
+
+    private IEnumerable<MedicamentoListadoDTO> MedicamentosFiltrados
+    {
+        get
+        {
+            if (medicamentos == null)
+                return Enumerable.Empty<MedicamentoListadoDTO>();
+
+            if (string.IsNullOrWhiteSpace(codigoBusqueda))
+                return medicamentos;
+
+            return medicamentos.Where(m =>
+                !string.IsNullOrWhiteSpace(m.Codigo) &&
+                m.Codigo.Contains(codigoBusqueda, StringComparison.OrdinalIgnoreCase));
+        }
+    }
+}

@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MadeSalud.BD.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260423152927_Inicio")]
-    partial class Inicio
+    [Migration("20260601005057_NombreFormulaycategoria")]
+    partial class NombreFormulaycategoria
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -159,20 +159,34 @@ namespace MadeSalud.BD.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("Codigo")
-                        .HasColumnType("int");
+                    b.Property<string>("Codigo")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<int>("EstadoRegistro")
                         .HasColumnType("int");
 
-                    b.Property<string>("NombreFormula")
-                        .IsRequired()
-                        .HasMaxLength(120)
-                        .HasColumnType("nvarchar(120)");
-
                     b.Property<string>("Observacion")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("Precio15")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("Precio25")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("PrecioAmaCasa30")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("PrecioUnitario")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Presentacion")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
 
                     b.HasKey("Id");
 
@@ -789,13 +803,13 @@ namespace MadeSalud.BD.Migrations
                     b.HasOne("MadeSalud.BD.Datos.Entity.Medico", "Medico")
                         .WithMany()
                         .HasForeignKey("MedicoId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("MadeSalud.BD.Datos.Entity.Paciente", "Paciente")
                         .WithMany()
                         .HasForeignKey("PacienteId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Medico");

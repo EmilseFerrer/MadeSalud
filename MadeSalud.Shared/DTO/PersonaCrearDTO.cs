@@ -45,7 +45,7 @@ namespace MadeSalud.Shared.DTO
         [Required(ErrorMessage = "La fecha de nacimiento es obligatoria.")]
         public DateTime FechaNacimiento { get; set; }
 
-
+        [Required(ErrorMessage = "El ROL es obligatorio")]
         public RolEnum? Rol { get; set; }
 
         public string? MatriculaProfesional { get; set; }

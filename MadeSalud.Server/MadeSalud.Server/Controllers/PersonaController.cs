@@ -120,8 +120,6 @@ namespace MadeSalud.Server.Controllers
                 return BadRequest("Debe seleccionar un rol.");
             }
 
-            using var transaction = await context.Database.BeginTransactionAsync();
-
             try
             {
                 Persona entidad = new Persona
@@ -142,12 +140,14 @@ namespace MadeSalud.Server.Controllers
 
                 if (DTO.Rol.Value == RolEnum.Secretaria)
                 {
-                    int cantidadSecretarias = await context.Secretarias.CountAsync();
+                    int ultimoLegajo = await context.Secretarias
+                        .Select(s => (int?)s.Id)
+                        .MaxAsync() ?? 0;
 
                     var secretaria = new Secretaria
                     {
                         PersonaId = entidad.Id,
-                        NLegajo = $"LEG-{cantidadSecretarias + 1:0000}"
+                        NLegajo = $"LEG-{ultimoLegajo + 1:0000}"
                     };
 
                     context.Secretarias.Add(secretaria);
@@ -174,8 +174,13 @@ namespace MadeSalud.Server.Controllers
                     var paciente = new Paciente
                     {
                         PersonaId = entidad.Id,
-                        ObraSocial = string.IsNullOrWhiteSpace(DTO.ObraSocial) ? "Sin obra social" : DTO.ObraSocial,
-                        MotivoConsulta = string.IsNullOrWhiteSpace(DTO.MotivoConsulta) ? "Sin motivo" : DTO.MotivoConsulta
+                        ObraSocial = string.IsNullOrWhiteSpace(DTO.ObraSocial)
+                            ? "Sin obra social"
+                            : DTO.ObraSocial,
+
+                        MotivoConsulta = string.IsNullOrWhiteSpace(DTO.MotivoConsulta)
+                            ? "Sin motivo"
+                            : DTO.MotivoConsulta
                     };
 
                     context.Pacientes.Add(paciente);
@@ -200,14 +205,11 @@ namespace MadeSalud.Server.Controllers
                     return BadRequest("Rol no válido.");
                 }
 
-                await transaction.CommitAsync();
-
                 return Ok(entidad.Id);
             }
             catch (Exception e)
             {
-                await transaction.RollbackAsync();
-                return BadRequest($"Error al crear el nuevo registro: {e.Message}");
+                return BadRequest($"Error al crear el nuevo registro: {e.InnerException?.Message ?? e.Message}");
             }
         }
 
@@ -237,15 +239,52 @@ namespace MadeSalud.Server.Controllers
             return Ok($"El registro con el id: {id} fue actualizado correctamente.");
         }
 
-        [HttpDelete("{id:int}")] //api/Persona/5
+        [HttpDelete("{id:int}")] //api/persona/5
         public async Task<ActionResult> Delete(int id)
         {
-            var resultado = await repositorio.Delete(id);
-            if (!resultado)
+            try
             {
-                return BadRequest("Datos no validos");
+                var persona = await context.Personas.FindAsync(id);
+
+                if (persona == null)
+                    return NotFound("No se encontró la persona.");
+
+                var paciente = await context.Pacientes
+                    .Include(p => p.HistoriaClinicas)
+                    .FirstOrDefaultAsync(p => p.PersonaId == id);
+
+                if (paciente != null)
+                {
+                    context.HistoriasClinicas.RemoveRange(paciente.HistoriaClinicas);
+                    context.Pacientes.Remove(paciente);
+                }
+
+                var medico = await context.Medicos
+                    .FirstOrDefaultAsync(m => m.PersonaId == id);
+
+                if (medico != null)
+                {
+                    context.Medicos.Remove(medico);
+                }
+
+                var secretaria = await context.Secretarias
+                    .FirstOrDefaultAsync(s => s.PersonaId == id);
+
+                if (secretaria != null)
+                {
+                    context.Secretarias.Remove(secretaria);
+                }
+
+                context.Personas.Remove(persona);
+
+                await context.SaveChangesAsync();
+
+                return Ok("Persona eliminada correctamente.");
             }
-            return Ok($"El registro con el id: {id} fue eliminado correctamente.");
+            catch (Exception e)
+            {
+                return BadRequest($"Error al eliminar: {e.InnerException?.Message ?? e.Message}");
+            }
         }
     }
 }

@@ -11,11 +11,25 @@ namespace MadeSalud.BD.Datos.Entity
     [Index(nameof(Codigo), Name = "CODMED_UQ", IsUnique = true)]
     public class Medicamento : EntityBase
     {
-        [Range(0, 999999)]
-        public int Codigo { get; set; }
+        [Required]
+        [MaxLength(20)]
+        public string Codigo { get; set; } = "";
 
-        [MaxLength(120)]
-        public required string NombreFormula { get; set; }
+        
+
+        [Required]
+        [MaxLength(80)]
+        public string Presentacion { get; set; } = "";
+
+        public decimal PrecioUnitario { get; set; }
+
+        public decimal Precio15 { get; set; }
+
+        public decimal Precio25 { get; set; }
+
+        public decimal PrecioAmaCasa30 { get; set; }
+
+       
 
     }
 }

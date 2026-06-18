@@ -9,7 +9,7 @@
 
 <h3>Agregar Persona</h3>
 
-<EditForm Model="persona" OnValidSubmit="Grabar">
+<EditForm Model="persona" OnSubmit="Grabar">
     <DataAnnotationsValidator />
     <ValidationSummary />
     <div class="card p-4 shadow-sm rounded-4" style="max-width: 600px;">
@@ -65,15 +65,15 @@
         <br />
         <div class="mb-3">
             <label class="form-label">Rol</label>
-            <InputSelect class="form-control" @bind-Value="persona.Rol">
+
+            <select class="form-control" @bind="rolSeleccionado">
                 <option value="">Seleccione un rol</option>
-                <option value="1">Paciente</option>
-                <option value="2">Médico</option>
-                <option value="3">Secretaria</option>
-            </InputSelect>
-            <ValidationMessage For="@(() => persona.Rol)" />
+                <option value="Paciente">Paciente</option>
+                <option value="Medico">Médico</option>
+                <option value="Secretaria">Secretaria</option>
+            </select>
         </div>
-        @if (persona.Rol == RolEnum.Paciente)
+        @if (rolSeleccionado == "Paciente")
         {
             <div class="alert alert-info">
                 El número de Historia Clínica se generará automáticamente.
@@ -94,7 +94,7 @@
             </div>
         }
 
-        @if (persona.Rol == RolEnum.Medico)
+        @if (rolSeleccionado == "Medico")
         {
             <div class="mb-3">
                 <label class="form-label">Matrícula Profesional</label>
@@ -104,7 +104,7 @@
             </div>
         }
 
-        @if (persona.Rol == RolEnum.Secretaria)
+        @if (rolSeleccionado == "Secretaria")
         {
             <div class="alert alert-info">
                 El número de legajo se generará automáticamente.
@@ -134,9 +134,24 @@
 {
     private PersonaCrearDTO persona = new PersonaCrearDTO();
     string Mensaje = "";
+    private string rolSeleccionado = "";
 
     private async Task Grabar()
     {
+        Mensaje = "";
+
+        if (rolSeleccionado == "Paciente")
+            persona.Rol = RolEnum.Paciente;
+        else if (rolSeleccionado == "Medico")
+            persona.Rol = RolEnum.Medico;
+        else if (rolSeleccionado == "Secretaria")
+            persona.Rol = RolEnum.Secretaria;
+        else
+        {
+            Mensaje = "Debe seleccionar un rol.";
+            return;
+        }
+
         var httpResp = await http.Post<PersonaCrearDTO, int>("api/Persona", persona);
 
         if (!httpResp.Error)
@@ -145,7 +160,7 @@
         }
         else
         {
-            Mensaje = httpResp.ObtenerError();
+            Mensaje = httpResp.HttpResponseMessage.StatusCode + " - " + await httpResp.HttpResponseMessage.Content.ReadAsStringAsync();
         }
     }
 

@@ -32,11 +32,26 @@ namespace MadeSalud.BD.Datos
         public required DbSet<Receta> Recetas { get; set; }
 
 
-       
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<Turno>()
+                .HasOne(t => t.Medico)
+                .WithMany()
+                .HasForeignKey(t => t.MedicoId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Turno>()
+                .HasOne(t => t.Paciente)
+                .WithMany()
+                .HasForeignKey(t => t.PacienteId)
+                .OnDelete(DeleteBehavior.Restrict);
+        }
 
 
 
-        
-        
+
+
     }
 }
